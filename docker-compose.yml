@@ -1,0 +1,19 @@
+name: mobile_money_lakehouse
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: mobile_money_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: mobile_money_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+
+volumes:
+  postgres_data:

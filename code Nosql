@@ -1,0 +1,20 @@
+use GestionNotesEtudiants;
+
+// 1. Nettoyage
+db.etudiants.drop();
+db.filieres.drop();
+db.matieres.drop();
+db.professeurs.drop();
+db.annees_academiques.drop();
+
+// 2. Création explicite de TOUTES les collections (avec contraintes/index)
+db.createCollection("etudiants");
+db.etudiants.createIndex({ "email": 1 }, { unique: true });
+
+db.createCollection("filieres");
+db.createCollection("matieres");
+db.createCollection("professeurs");
+db.createCollection("annees_academiques");
+
+// 3. Chargement des données (Insertions)
+// ...

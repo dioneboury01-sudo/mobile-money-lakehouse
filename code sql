@@ -1,0 +1,120 @@
+-- 1. Création de la base de données si elle n'existe pas
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'GestionNotesEtudiants')
+BEGIN
+    CREATE DATABASE GestionNotesEtudiants;
+END
+GO
+
+USE GestionNotesEtudiants;
+GO
+
+-- 2. Suppression des tables si elles existent déjà (Ordre inverse des dépendances)
+DROP TABLE IF EXISTS Evaluation;
+DROP TABLE IF EXISTS Enseignement;
+DROP TABLE IF EXISTS Inscription;
+DROP TABLE IF EXISTS Etudiant;
+DROP TABLE IF EXISTS Semestre;
+DROP TABLE IF EXISTS Matiere;
+DROP TABLE IF EXISTS Professeur;
+DROP TABLE IF EXISTS Filiere;
+DROP TABLE IF EXISTS Niveau;
+DROP TABLE IF EXISTS Annee_academique;
+GO
+
+-- 3. Création des tables Mères (Sans clés étrangères)
+
+CREATE TABLE Annee_academique (
+    id_annee INT IDENTITY(1,1) PRIMARY KEY,
+    annee_debut INT NOT NULL,
+    annee_fin INT NOT NULL
+);
+
+CREATE TABLE Niveau (
+    id_niveau INT IDENTITY(1,1) PRIMARY KEY,
+    libelle_niveau VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Filiere (
+    id_filiere INT IDENTITY(1,1) PRIMARY KEY,
+    nom_filiere VARCHAR(100) NOT NULL,
+    date_creation DATE,
+    descrip_filiere VARCHAR(MAX)
+);
+
+CREATE TABLE Professeur (
+    id_prof INT IDENTITY(1,1) PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telephone VARCHAR(20),
+    specialite VARCHAR(100)
+);
+
+CREATE TABLE Matiere (
+    id_matiere INT IDENTITY(1,1) PRIMARY KEY,
+    libelle_matiere VARCHAR(100) NOT NULL,
+    coefficient DECIMAL(3,1) DEFAULT 1.0,
+    nbr_credit INT DEFAULT 0,
+    volume_horaire INT DEFAULT 0
+);
+
+-- 4. Création des tables Filles (Avec clés étrangères)
+
+CREATE TABLE Semestre (
+    id_semestre INT IDENTITY(1,1) PRIMARY KEY,
+    code_semestre VARCHAR(20) NOT NULL,
+    date_debut DATE,
+    date_fin DATE,
+    id_filiere INT NOT NULL,
+    CONSTRAINT FK_Semestre_Filiere FOREIGN KEY (id_filiere) REFERENCES Filiere(id_filiere) ON DELETE CASCADE
+);
+
+CREATE TABLE Etudiant (
+    id_etudiant INT IDENTITY(1,1) PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telephone VARCHAR(20),
+    adresse VARCHAR(150),
+    date_naissance DATE,
+    id_niveau INT NOT NULL,
+    CONSTRAINT FK_Etudiant_Niveau FOREIGN KEY (id_niveau) REFERENCES Niveau(id_niveau)
+);
+
+-- 5. Création des tables d'association (Jonction N-aires)
+
+CREATE TABLE Inscription (
+    id_filiere INT NOT NULL,
+    id_annee INT NOT NULL,
+    id_etudiant INT NOT NULL,
+    date_inscription DATE DEFAULT GETDATE(),
+    frais_inscription DECIMAL(10,2),
+    CONSTRAINT PK_Inscription PRIMARY KEY (id_filiere, id_annee, id_etudiant),
+    CONSTRAINT FK_Inscription_Filiere FOREIGN KEY (id_filiere) REFERENCES Filiere(id_filiere),
+    CONSTRAINT FK_Inscription_Annee FOREIGN KEY (id_annee) REFERENCES Annee_academique(id_annee),
+    CONSTRAINT FK_Inscription_Etudiant FOREIGN KEY (id_etudiant) REFERENCES Etudiant(id_etudiant) ON DELETE CASCADE
+);
+
+CREATE TABLE Enseignement (
+    id_filiere INT NOT NULL,
+    id_prof INT NOT NULL,
+    id_matiere INT NOT NULL,
+    id_niveau INT NOT NULL,
+    CONSTRAINT PK_Enseignement PRIMARY KEY (id_filiere, id_prof, id_matiere, id_niveau),
+    CONSTRAINT FK_Enseignement_Filiere FOREIGN KEY (id_filiere) REFERENCES Filiere(id_filiere),
+    CONSTRAINT FK_Enseignement_Prof FOREIGN KEY (id_prof) REFERENCES Professeur(id_prof),
+    CONSTRAINT FK_Enseignement_Matiere FOREIGN KEY (id_matiere) REFERENCES Matiere(id_matiere),
+    CONSTRAINT FK_Enseignement_Niveau FOREIGN KEY (id_niveau) REFERENCES Niveau(id_niveau)
+);
+
+CREATE TABLE Evaluation (
+    id_matiere INT NOT NULL,
+    id_etudiant INT NOT NULL,
+    date_evaluation DATE,
+    note_evaluation DECIMAL(4,2) CHECK (note_evaluation BETWEEN 0 AND 20),
+    type_evaluation VARCHAR(50),
+    CONSTRAINT PK_Evaluation PRIMARY KEY (id_matiere, id_etudiant, date_evaluation),
+    CONSTRAINT FK_Evaluation_Matiere FOREIGN KEY (id_matiere) REFERENCES Matiere(id_matiere),
+    CONSTRAINT FK_Evaluation_Etudiant FOREIGN KEY (id_etudiant) REFERENCES Etudiant(id_etudiant) ON DELETE CASCADE
+);
+GO
